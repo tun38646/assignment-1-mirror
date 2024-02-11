@@ -19,8 +19,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import edu.temple.convoy.ui.theme.ConvoyTheme
-import kotlin.math.log
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,34 +41,40 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun ConvoyApp() {
-    var loggedIn by remember {
-        mutableStateOf(false)
-    }
-
-    if (!loggedIn) {
-        FirstTimeScreen()
+    val navController = rememberNavController()
+    NavHost(navController = navController, startDestination = "initialScreen") {
+        composable("initialScreen") {
+            InitialScreen(navController = navController)
+        }
+        composable("createAccountScreen") {
+            CreateAccountScreen(navController = navController)
+        }
+        composable("loginScreen") {
+            LoginScreen(navController = navController)
+        }
+        composable("mainScreen") {
+            MainScreen(navController = navController)
+        }
     }
 }
 
-@Preview
 @Composable
-fun FirstTimeScreen() {
+fun InitialScreen(navController: NavController) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Button(onClick = { /*TODO*/ }) {
+        Button(onClick = { navController.navigate("createAccountScreen") }) {
             Text(text = "Create an Account")
         }
-        Button(onClick = { /*TODO*/ }) {
+        Button(onClick = { navController.navigate("loginScreen") }) {
             Text(text = "Log In")
         }
     }
 }
 
-@Preview
 @Composable
-fun CreateAccountScreen() {
+fun CreateAccountScreen(navController: NavController) {
     var fullName by remember { mutableStateOf("") }
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -95,16 +104,15 @@ fun CreateAccountScreen() {
             onValueChange = { confirmPassword = it },
             label = { Text(text = "Confirm Password") }
         )
-        Button(onClick = { /*TODO*/ }) {
+        Button(onClick = { navController.navigate("mainScreen") }) {
             Text(text = "Create Account")
         }
     }
 
 }
 
-@Preview
 @Composable
-fun LogInScreen() {
+fun LoginScreen(navController: NavController) {
     var username by remember {
         mutableStateOf("")
     }
@@ -126,8 +134,21 @@ fun LogInScreen() {
             onValueChange = { password = it },
             label = { Text(text = "Password") }
         )
-        Button(onClick = { /*TODO*/ }) {
+        Button(onClick = { navController.navigate("mainScreen") }) {
             Text(text = "Log In")
         }
+    }
+}
+
+@Composable
+fun MainScreen(navController: NavController) {
+
+}
+
+@Preview
+@Composable
+fun DefaultPreview() {
+    ConvoyTheme {
+        ConvoyApp()
     }
 }
