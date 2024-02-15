@@ -1,8 +1,13 @@
 package edu.temple.convoy
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.location.LocationManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +30,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,6 +41,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -48,21 +55,25 @@ import com.google.maps.android.compose.rememberCameraPositionState
 import edu.temple.convoy.ui.theme.ConvoyTheme
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         // Testing AccountManager functions
         val accountManager = AccountManager(this@MainActivity)
-        accountManager.register("user", "first", "last", "123")
-        accountManager.login("user", "123")
+//        accountManager.register("user", "first", "last", "123")
+//        accountManager.login("user", "123")
 
         val convoyManager = ConvoyManager(this@MainActivity)
-        convoyManager.create("user", "12345")
+//        convoyManager.create("user", "12345")
 
         setContent {
             ConvoyTheme {
                 // A surface container using the 'background' color from the theme
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
                     ConvoyApp(accountManager)
                 }
             }
@@ -78,7 +89,7 @@ fun ConvoyApp(accountManager: AccountManager) {
             InitialScreen(navController = navController)
         }
         composable("createAccountScreen") {
-            CreateAccountScreen(navController = navController, accountManager = accountManager)
+            RegisterScreen(navController = navController, accountManager = accountManager)
         }
         composable("loginScreen") {
             LoginScreen(navController = navController, accountManager = accountManager)
@@ -95,6 +106,7 @@ fun InitialScreen(navController: NavController) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        Text(text = "Welcome to Convoy", Modifier.padding(bottom = 16.dp), fontSize = 32.sp)
         Button(onClick = { navController.navigate("createAccountScreen") }) {
             Text(text = "Create an Account")
         }
@@ -105,7 +117,7 @@ fun InitialScreen(navController: NavController) {
 }
 
 @Composable
-fun CreateAccountScreen(navController: NavController, accountManager: AccountManager) {
+fun RegisterScreen(navController: NavController, accountManager: AccountManager) {
     var username by remember {
         mutableStateOf("")
     }
@@ -130,6 +142,7 @@ fun CreateAccountScreen(navController: NavController, accountManager: AccountMan
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        Text(text = "Register")
         Text(text = errorMessage, color = Color.Red)
         OutlinedTextField(
             value = username,
@@ -167,7 +180,7 @@ fun CreateAccountScreen(navController: NavController, accountManager: AccountMan
             }
 
         }) {
-            Text(text = "Create Account")
+            Text(text = "Register")
         }
     }
 
@@ -190,6 +203,7 @@ fun LoginScreen(navController: NavController, accountManager: AccountManager) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        Text(text = "Login")
         Text(text = errorMessage, color = Color.Red)
         OutlinedTextField(
             value = username,
@@ -209,13 +223,40 @@ fun LoginScreen(navController: NavController, accountManager: AccountManager) {
                 navController.navigate("mainScreen")
             }
         }) {
-            Text(text = "Log In")
+            Text(text = "Login")
         }
     }
 }
 
 @Composable
 fun MainScreen(navController: NavController) {
+    val locationPermissionRequest = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        when {
+            permissions.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false) -> {
+                // Precise location access granted.
+            }
+
+            permissions.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false) -> {
+                // Only approximate location access granted.
+            }
+
+            else -> {
+                // No location access granted.
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        locationPermissionRequest.launch(
+            arrayOf(
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        )
+    }
+
     MapComponent()
     Row(
         modifier = Modifier.padding(bottom = 32.dp),
