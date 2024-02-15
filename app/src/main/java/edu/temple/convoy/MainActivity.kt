@@ -36,11 +36,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Testing AccountManager functions
+        val accountManager = AccountManager(this@MainActivity)
+        accountManager.register("user", "first", "last", "123")
+        accountManager.login("user", "123")
+
         setContent {
             ConvoyTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    ConvoyApp()
+                    ConvoyApp(accountManager)
                 }
             }
         }
@@ -48,17 +53,17 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun ConvoyApp() {
+fun ConvoyApp(accountManager: AccountManager) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "initialScreen") {
         composable("initialScreen") {
             InitialScreen(navController = navController)
         }
         composable("createAccountScreen") {
-            CreateAccountScreen(navController = navController)
+            CreateAccountScreen(navController = navController, accountManager = accountManager)
         }
         composable("loginScreen") {
-            LoginScreen(navController = navController)
+            LoginScreen(navController = navController, accountManager = accountManager)
         }
         composable("mainScreen") {
             MainScreen(navController = navController)
@@ -82,7 +87,7 @@ fun InitialScreen(navController: NavController) {
 }
 
 @Composable
-fun CreateAccountScreen(navController: NavController) {
+fun CreateAccountScreen(navController: NavController, accountManager: AccountManager) {
     var username by remember {
         mutableStateOf("")
     }
@@ -139,7 +144,8 @@ fun CreateAccountScreen(navController: NavController) {
             } else if (password != confirmPassword) {
                 errorMessage = "Passwords do not match."
             } else {
-//                navController.navigate("mainScreen")
+                accountManager.register(username, firstName, lastName, password)
+                navController.navigate("mainScreen")
             }
 
         }) {
@@ -150,7 +156,7 @@ fun CreateAccountScreen(navController: NavController) {
 }
 
 @Composable
-fun LoginScreen(navController: NavController) {
+fun LoginScreen(navController: NavController, accountManager: AccountManager) {
     var username by remember {
         mutableStateOf("")
     }
@@ -181,7 +187,8 @@ fun LoginScreen(navController: NavController) {
             if (username.isEmpty() || password.isEmpty()) {
                 errorMessage = "Please fill in all fields."
             } else {
-//                navController.navigate("mainScreen")
+                accountManager.login(username, password)
+                navController.navigate("mainScreen")
             }
         }) {
             Text(text = "Log In")
