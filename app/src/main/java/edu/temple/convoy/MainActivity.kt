@@ -82,10 +82,15 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun ConvoyApp(context: Context) {
+    var startDestination = "initialScreen"
+    Helper.user.getSessionKey(context)?.run {
+        startDestination = "mainScreen"
+    }
+
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = "initialScreen") {
+    NavHost(navController = navController, startDestination = startDestination) {
         composable("initialScreen") {
-            InitialScreen(navController = navController)
+            InitialScreen(context = context, navController = navController)
         }
         composable("createAccountScreen") {
             RegisterScreen(context = context, navController = navController)
@@ -100,7 +105,7 @@ fun ConvoyApp(context: Context) {
 }
 
 @Composable
-fun InitialScreen(navController: NavController) {
+fun InitialScreen(context: Context, navController: NavController) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
