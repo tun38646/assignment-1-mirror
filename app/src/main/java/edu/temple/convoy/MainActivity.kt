@@ -66,40 +66,6 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-//        var username = "buitest"
-//        var firstname = "Tim"
-//        var lastname = "Bui"
-//        var password = "password"
-//
-//        Helper.api.createAccount(this@MainActivity,
-//            User(
-//            username,
-//            firstname,
-//            lastname
-//            ),
-//            password
-//        ) { response ->
-//            if (Helper.api.isSuccess(response)) {
-//                Helper.user.saveSessionData(
-//                    this@MainActivity,
-//                    response.getString("session_key")
-//                )
-//                Helper.user.saveUser(
-//                    this@MainActivity, User(
-//                        username,
-//                        firstname,
-//                        lastname
-//                    )
-//                )
-//            } else {
-//                Toast.makeText(
-//                    this@MainActivity,
-//                    Helper.api.getErrorMessage(response),
-//                    Toast.LENGTH_SHORT
-//                ).show()
-//            }
-//        }
-
         setContent {
             ConvoyTheme {
                 // A surface container using the 'background' color from the theme
@@ -167,16 +133,11 @@ fun RegisterScreen(context: Context, navController: NavController) {
         mutableStateOf("")
     }
 
-    var errorMessage by remember {
-        mutableStateOf("")
-    }
-
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text(text = "Register")
-        Text(text = errorMessage, color = Color.Red)
         OutlinedTextField(
             value = username,
             onValueChange = { username = it },
@@ -204,11 +165,20 @@ fun RegisterScreen(context: Context, navController: NavController) {
         )
         Button(onClick = {
             if (username.isEmpty() || firstname.isEmpty() || lastname.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
-                errorMessage = "Please fill in all fields."
+                Toast.makeText(
+                    context,
+                    "Please fill in all fields",
+                    Toast.LENGTH_SHORT
+                ).show()
             } else if (password != confirmPassword) {
-                errorMessage = "Passwords do not match."
+                Toast.makeText(
+                    context,
+                    "Passwords do not match",
+                    Toast.LENGTH_SHORT
+                ).show()
             } else {
-                Helper.api.createAccount(context,
+                Helper.api.createAccount(
+                    context,
                     User(
                         username,
                         firstname,
@@ -255,16 +225,11 @@ fun LoginScreen(context: Context, navController: NavController) {
         mutableStateOf("")
     }
 
-    var errorMessage by remember {
-        mutableStateOf("")
-    }
-
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text(text = "Login")
-        Text(text = errorMessage, color = Color.Red)
         OutlinedTextField(
             value = username,
             onValueChange = { username = it },
@@ -277,9 +242,42 @@ fun LoginScreen(context: Context, navController: NavController) {
         )
         Button(onClick = {
             if (username.isEmpty() || password.isEmpty()) {
-                errorMessage = "Please fill in all fields."
+                Toast.makeText(
+                    context,
+                    "Please fill in all fields",
+                    Toast.LENGTH_SHORT
+                ).show()
             } else {
-                navController.navigate("mainScreen")
+                Helper.api.login(
+                    context,
+                    User(
+                        username,
+                        null,
+                        null
+                    ),
+                    password
+                ) { response ->
+                    if (Helper.api.isSuccess(response)) {
+                        Helper.user.saveSessionData(
+                            context,
+                            response.getString("session_key")
+                        )
+                        Helper.user.saveUser(
+                            context, User(
+                                username,
+                                null,
+                                null
+                            )
+                        )
+                    } else {
+                        Toast.makeText(
+                            context,
+                            Helper.api.getErrorMessage(response),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                    navController.navigate("mainScreen")
+                }
             }
         }) {
             Text(text = "Login")

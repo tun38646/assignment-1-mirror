@@ -31,6 +31,26 @@ class Helper {
             makeRequest(context, ENDPOINT_USER, params, response)
         }
 
+        fun login(context: Context, user: User, password: String, response: Response?) {
+            val params = mutableMapOf(
+                Pair("action", "LOGIN"),
+                Pair("username", user.username),
+                Pair("password", password)
+            )
+
+            makeRequest(context, ENDPOINT_USER, params, response)
+        }
+
+        fun logout(context: Context, user: User, sessionKey: String, response: Response?) {
+            val params = mutableMapOf(
+                Pair("action", "LOGOUT"),
+                Pair("username", user.username),
+                Pair("session_key", sessionKey)
+            )
+
+            makeRequest(context, ENDPOINT_USER, params, response)
+        }
+
         private fun makeRequest(context: Context, endPoint: String, params: MutableMap<String, String>, responseCallback: Response?) {
             Volley.newRequestQueue(context)
                 .add(object: StringRequest(Request.Method.POST, API_BASE + endPoint, {
