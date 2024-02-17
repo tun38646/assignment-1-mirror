@@ -1,9 +1,13 @@
 package edu.temple.convoy
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
+import android.location.Location
 import android.location.LocationManager
 import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -38,14 +42,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
@@ -59,13 +66,39 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Testing AccountManager functions
-        val accountManager = AccountManager(this@MainActivity)
-//        accountManager.register("user", "first", "last", "123")
-//        accountManager.login("user", "123")
-
-        val convoyManager = ConvoyManager(this@MainActivity)
-//        convoyManager.create("user", "12345")
+//        var username = "buitest"
+//        var firstname = "Tim"
+//        var lastname = "Bui"
+//        var password = "password"
+//
+//        Helper.api.createAccount(this@MainActivity,
+//            User(
+//            username,
+//            firstname,
+//            lastname
+//            ),
+//            password
+//        ) { response ->
+//            if (Helper.api.isSuccess(response)) {
+//                Helper.user.saveSessionData(
+//                    this@MainActivity,
+//                    response.getString("session_key")
+//                )
+//                Helper.user.saveUser(
+//                    this@MainActivity, User(
+//                        username,
+//                        firstname,
+//                        lastname
+//                    )
+//                )
+//            } else {
+//                Toast.makeText(
+//                    this@MainActivity,
+//                    Helper.api.getErrorMessage(response),
+//                    Toast.LENGTH_SHORT
+//                ).show()
+//            }
+//        }
 
         setContent {
             ConvoyTheme {
@@ -74,7 +107,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    ConvoyApp(accountManager)
+                    ConvoyApp(this@MainActivity)
                 }
             }
         }
@@ -82,17 +115,17 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun ConvoyApp(accountManager: AccountManager) {
+fun ConvoyApp(context: Context) {
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = "initialScreen") {
         composable("initialScreen") {
             InitialScreen(navController = navController)
         }
         composable("createAccountScreen") {
-            RegisterScreen(navController = navController, accountManager = accountManager)
+            RegisterScreen(context = context, navController = navController)
         }
         composable("loginScreen") {
-            LoginScreen(navController = navController, accountManager = accountManager)
+            LoginScreen(context = context, navController = navController)
         }
         composable("mainScreen") {
             MainScreen(navController = navController)
@@ -117,14 +150,14 @@ fun InitialScreen(navController: NavController) {
 }
 
 @Composable
-fun RegisterScreen(navController: NavController, accountManager: AccountManager) {
+fun RegisterScreen(context: Context, navController: NavController) {
     var username by remember {
         mutableStateOf("")
     }
-    var firstName by remember {
+    var firstname by remember {
         mutableStateOf("")
     }
-    var lastName by remember {
+    var lastname by remember {
         mutableStateOf("")
     }
     var password by remember {
@@ -150,13 +183,13 @@ fun RegisterScreen(navController: NavController, accountManager: AccountManager)
             label = { Text(text = "Username") }
         )
         OutlinedTextField(
-            value = firstName,
-            onValueChange = { firstName = it },
+            value = firstname,
+            onValueChange = { firstname = it },
             label = { Text(text = "First Name") }
         )
         OutlinedTextField(
-            value = lastName,
-            onValueChange = { lastName = it },
+            value = lastname,
+            onValueChange = { lastname = it },
             label = { Text(text = "Last Name") }
         )
         OutlinedTextField(
@@ -170,12 +203,39 @@ fun RegisterScreen(navController: NavController, accountManager: AccountManager)
             label = { Text(text = "Confirm Password") }
         )
         Button(onClick = {
-            if (username.isEmpty() || firstName.isEmpty() || lastName.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+            if (username.isEmpty() || firstname.isEmpty() || lastname.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
                 errorMessage = "Please fill in all fields."
             } else if (password != confirmPassword) {
                 errorMessage = "Passwords do not match."
             } else {
-                accountManager.register(username, firstName, lastName, password)
+                Helper.api.createAccount(context,
+                    User(
+                        username,
+                        firstname,
+                        lastname
+                    ),
+                    password
+                ) { response ->
+                    if (Helper.api.isSuccess(response)) {
+                        Helper.user.saveSessionData(
+                            context,
+                            response.getString("session_key")
+                        )
+                        Helper.user.saveUser(
+                            context, User(
+                                username,
+                                firstname,
+                                lastname
+                            )
+                        )
+                    } else {
+                        Toast.makeText(
+                            context,
+                            Helper.api.getErrorMessage(response),
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
                 navController.navigate("mainScreen")
             }
 
@@ -187,7 +247,7 @@ fun RegisterScreen(navController: NavController, accountManager: AccountManager)
 }
 
 @Composable
-fun LoginScreen(navController: NavController, accountManager: AccountManager) {
+fun LoginScreen(context: Context, navController: NavController) {
     var username by remember {
         mutableStateOf("")
     }
@@ -219,7 +279,6 @@ fun LoginScreen(navController: NavController, accountManager: AccountManager) {
             if (username.isEmpty() || password.isEmpty()) {
                 errorMessage = "Please fill in all fields."
             } else {
-                accountManager.login(username, password)
                 navController.navigate("mainScreen")
             }
         }) {
@@ -230,33 +289,6 @@ fun LoginScreen(navController: NavController, accountManager: AccountManager) {
 
 @Composable
 fun MainScreen(navController: NavController) {
-    val locationPermissionRequest = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        when {
-            permissions.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false) -> {
-                // Precise location access granted.
-            }
-
-            permissions.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false) -> {
-                // Only approximate location access granted.
-            }
-
-            else -> {
-                // No location access granted.
-            }
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        locationPermissionRequest.launch(
-            arrayOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
-            )
-        )
-    }
-
     MapComponent()
     Row(
         modifier = Modifier.padding(bottom = 32.dp),
@@ -284,13 +316,7 @@ fun MapComponent() {
     GoogleMap(
         modifier = Modifier.fillMaxSize(),
         cameraPositionState = cameraPositionState
-    ) {
-        Marker(
-            state = MarkerState(position = singapore),
-            title = "Singapore",
-            snippet = "Marker in Singapore"
-        )
-    }
+    )
 }
 
 //@Preview
