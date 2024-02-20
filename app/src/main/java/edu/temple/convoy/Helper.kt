@@ -51,6 +51,34 @@ class Helper {
             makeRequest(context, ENDPOINT_USER, params, response)
         }
 
+        fun createConvoy(context: Context, user: User, sessionKey: String, response: Response?) {
+            val params = mutableMapOf(
+                Pair("action", "CREATE"),
+                Pair("username", user.username),
+                Pair("session_key", sessionKey)
+            )
+            makeRequest(context, ENDPOINT_CONVOY, params, response)
+        }
+
+        fun closeConvoy(context: Context, user: User, sessionKey: String, convoyId: String, response: Response?) {
+            val params = mutableMapOf(
+                Pair("action", "CLOSE"),
+                Pair("username", user.username),
+                Pair("session_key", sessionKey),
+                Pair("convoy_id", convoyId)
+            )
+            makeRequest(context, ENDPOINT_CONVOY, params, response)
+        }
+
+        fun queryStatus(context: Context, user:User, sessionKey: String, response: Response?) {
+            val params = mutableMapOf(
+                Pair("action", "QUERY"),
+                Pair("username", user.username),
+                Pair("session_key", sessionKey),
+            )
+            makeRequest(context, ENDPOINT_CONVOY, params, response)
+        }
+
         private fun makeRequest(context: Context, endPoint: String, params: MutableMap<String, String>, responseCallback: Response?) {
             Volley.newRequestQueue(context)
                 .add(object: StringRequest(Request.Method.POST, API_BASE + endPoint, {
@@ -101,6 +129,21 @@ class Helper {
                 .putString(KEY_FIRSTNAME, user.firstname)
                 .putString(KEY_LASTNAME, user.lastname)
                 .apply()
+        }
+
+        fun saveConvoyId(context: Context, groupId: String) {
+            getSP(context).edit()
+                .putString(KEY_CONVOY_ID, groupId)
+                .apply()
+        }
+
+        fun clearConvoyId(context: Context) {
+            getSP(context).edit().remove(KEY_CONVOY_ID)
+                .apply()
+        }
+
+        fun getConvoyId(context: Context): String? {
+            return getSP(context).getString(KEY_CONVOY_ID, null)
         }
 
         fun get(context: Context): User {
