@@ -21,18 +21,23 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,6 +49,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -65,7 +71,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContent {
             ConvoyTheme {
                 // A surface container using the 'background' color from the theme
@@ -76,6 +81,18 @@ class MainActivity : ComponentActivity() {
                     ConvoyApp(this@MainActivity)
                 }
             }
+        }
+
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && checkSelfPermission(
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                ), 1
+            )
         }
     }
 }
@@ -99,7 +116,7 @@ fun ConvoyApp(context: Context) {
             LoginScreen(context = context, navController = navController)
         }
         composable("mainScreen") {
-            MainScreen(navController = navController)
+            MainScreen(context = context, navController = navController)
         }
     }
 }
@@ -290,22 +307,68 @@ fun LoginScreen(context: Context, navController: NavController) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(navController: NavController) {
-    MapComponent()
-    Row(
-        modifier = Modifier.padding(bottom = 32.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.Bottom
-    ) {
-        FloatingActionButton(onClick = { /*TODO*/ }) {
-            Icon(imageVector = Icons.Default.PlayArrow, contentDescription = "Start Convoy")
+fun MainScreen(context: Context, navController: NavController) {
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                colors = topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.primary,
+                ),
+                title = {
+                    Text(
+                        text = "Convoy App",
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                },
+                actions = {
+                    IconButton(onClick = {
+                        Helper.user.getSessionKey(context)?.let {
+                            Helper.api.logout(
+                                context,
+                                User(
+                                    Helper.user.get(context).username,
+                                    null,
+                                    null
+                                ),
+                                it
+                            ) { response ->
+                                if (Helper.api.isSuccess(response)) {
+                                    Helper.user.clearSessionData(context)
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        Helper.api.getErrorMessage(response),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                                navController.navigate("loginScreen")
+                            }
+                        }
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.ExitToApp,
+                            contentDescription = "Logout"
+                        )
+                    }
+                }
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = { /*TODO*/ }) {
+                Icon(imageVector = Icons.Default.Add, contentDescription = "Start Convoy")
+            }
         }
-        FloatingActionButton(onClick = { /*TODO*/ }) {
-            Icon(imageVector = Icons.Default.Add, contentDescription = "Join Convoy")
-        }
-        FloatingActionButton(onClick = { /*TODO*/ }) {
-            Icon(imageVector = Icons.Default.ExitToApp, contentDescription = "Leave Convoy")
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            MapComponent()
         }
     }
 }
